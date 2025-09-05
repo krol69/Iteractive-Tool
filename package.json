@@ -1,0 +1,18 @@
+{
+  "name": "slido-local",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "concurrently -k -n WEB,API \"pnpm --filter @slido-local/web dev\" \"pnpm --filter @slido-local/server dev\"",
+    "build": "pnpm --filter @slido-local/web build && pnpm --filter @slido-local/server build",
+    "start": "concurrently -k -n API,WEB \"pnpm --filter @slido-local/server start\" \"pnpm --filter @slido-local/web preview\"",
+    "lint": "eslint .",
+    "format": "prettier -w ."
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^9.6.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  }
+}

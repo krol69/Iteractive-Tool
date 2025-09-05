@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Event {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  passcodeHash String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  theme        Theme?
+  rooms        Room[]
+  assets       Asset[]
+  sessions     Session[]
+  participants User[]
+}
+
+model Room {
+  id       String   @id @default(cuid())
+  name     String
+  order    Int
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId  String   @index
+  sessions Session[]
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  name      String
+  startAt   DateTime
+  endAt     DateTime?
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String    @index
+  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId    String    @index
+  questions Question[]
+  polls     Poll[]
+}
+
+model Question {
+  id         String   @id @default(cuid())
+  text       String
+  status     String   @default("PENDING_MODERATION")
+  isPinned   Boolean  @default(false)
+  isAnswered Boolean  @default(false)
+  tags       Json?
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String   @index
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId   String?  @index
+  votes      Vote[]
+  createdAt  DateTime @default(now())
+}
+
+model Vote {
+  id         String   @id @default(cuid())
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String   @index
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String   @index
+  createdAt  DateTime @default(now())
+
+  @@unique([questionId, userId])
+}
+
+model Poll {
+  id           String        @id @default(cuid())
+  type         String
+  question     String
+  options      Json
+  settings     Json
+  state        String        @default("IDLE") // IDLE, ACTIVE, FINISHED
+  session      Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId    String        @index
+  responses    Response[]
+  quizAttempts QuizAttempt[]
+  createdAt    DateTime      @default(now())
+}
+
+model Response {
+  id        String   @id @default(cuid())
+  payload   Json
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollId    String   @index
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId  String?  @index
+  createdAt DateTime @default(now())
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  nickname  String
+  score     Int
+  details   Json
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollId    String   @index
+  createdAt DateTime @default(now())
+}
+
+model Theme {
+  id      String  @id @default(cuid())
+  config  Json
+  Event   Event?  @relation(fields: [eventId], references: [id])
+  eventId String? @unique
+}
+
+model Asset {
+  id       String @id @default(cuid())
+  kind     String
+  filename String
+  mimeType String
+  data     Bytes
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId  String @index
+}
+
+model User {
+  id           String     @id @default(cuid())
+  role         String     @default("PARTICIPANT")
+  displayName  String?
+  bannedUntil  DateTime?
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      String     @index
+  socketId     String?    @unique
+  questions    Question[]
+  votes        Vote[]
+  responses    Response[]
+  createdAt    DateTime   @default(now())
+}

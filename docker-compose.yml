@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=file:./prisma/dev.db
+      - WEB_URL=http://localhost:3000
+      - HOST=0.0.0.0
+      - PORT=4000
+      - ALLOW_LAN=false
+    volumes:
+      - ./apps/server/prisma:/app/prisma
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    depends_on:
+      - server
+    restart: unless-stopped
